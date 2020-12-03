@@ -1,0 +1,55 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: segwatcher
+  namespace: monitoring
+  labels:
+    app: {{ .Chart.Name }}
+    component: app
+    env: {{ .Values.environment }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      component: app
+      env: {{ .Values.environment }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        component: app
+        env: {{ .Values.environment }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: segwatcher
+        image: {{ .Values.image.repo }}:{{ .Values.image.tag }}
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+        command:
+          - "/bin/sh"
+          - "-c"
+          - |
+              set -e
+              nsenter -t 1 -m -- su -c "echo \\\"{{ .Values.core_pattern.path }}/{{ .Values.core_pattern.pattern }}\\\" > /proc/sys/kernel/core_pattern"
+              sh /watcher.sh
+        resources:
+          requests: { cpu: 5m, memory: 10Mi }
+        env:
+        - { name: AWS_ACCESS_KEY_ID,     valueFrom: { secretKeyRef: { name: {{ template "fullname" $ }}, key: aws_key_id }} }
+        - { name: AWS_SECRET_ACCESS_KEY, valueFrom: { secretKeyRef: { name: {{ template "fullname" $ }}, key: aws_key_secret }} }
+        - { name: AWS_DEFAULT_REGION,    valueFrom: { secretKeyRef: { name: {{ template "fullname" $ }}, key: aws_region }} }
+        - { name: AWS_BUCKET,            valueFrom: { secretKeyRef: { name: {{ template "fullname" $ }}, key: aws_bucket }} }
+        - { name: CHAT_ID,               valueFrom: { secretKeyRef: { name: {{ template "fullname" $ }}, key: chat_id }} }
+        - { name: TOKEN,                 valueFrom: { secretKeyRef: { name: {{ template "fullname" $ }}, key: telegram_token }} }
+        - { name: NODE_NAME,             valueFrom: { fieldRef: { fieldPath: spec.nodeName } } }
+        volumeMounts:
+        - { name: core-path, mountPath: {{ .Values.core_pattern.path | quote }} }
+        - { name: config, subPath: watcher.sh, mountPath: /watcher.sh }
+      volumes:
+      - { name: core-path, hostPath: { path: {{ .Values.core_pattern.path }} } }
+      - { name: config, configMap: { name: {{ template "fullname" $ }} } }

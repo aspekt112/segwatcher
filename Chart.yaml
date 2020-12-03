@@ -1,0 +1,9 @@
+---
+apiVersion: v2
+name: segwatcher
+description: Detect core dumps; move it to s3 and send alert to telegram channel
+version: 1.0.0
+appVersion: 1.0.0
+maintainers:
+- name: Artem Nurmatov
+  email: aspekt112@gmail.com

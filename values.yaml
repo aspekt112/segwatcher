@@ -1,0 +1,18 @@
+---
+environment: test
+
+image:
+  repo: "aspekt112/segwatcher"
+  tag: "2020-11-30"
+
+core_pattern:
+  path: "/core"
+  pattern: "core.%e.%p.%t"
+
+secrets:
+  aws_bucket:     "AWS_S3_BUCKET"
+  aws_key_id:     "AWS_ACCESS_KEY_ID"
+  aws_key_secret: "AWS_SECRET_ACCESS_KEY"
+  aws_region:     "AWS_DEFAULT_REGION"
+  chat_id:        "telegram.chat.id"
+  telegram_token: "telegram.bot.token"
