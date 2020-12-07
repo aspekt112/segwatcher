@@ -30,13 +30,12 @@ spec:
         imagePullPolicy: Always
         securityContext:
           privileged: true
-        command:
-          - "/bin/sh"
-          - "-c"
-          - |
-              set -e
-              nsenter -t 1 -m -- su -c "echo \\\"{{ .Values.core_pattern.path }}/{{ .Values.core_pattern.pattern }}\\\" > /proc/sys/kernel/core_pattern"
-              sh /watcher.sh
+        lifecycle:
+          preStop: { exec: { command: ["/bin/sh", "-c", "pkill inotifywait"] } }
+        command: ["/bin/sh"]
+        args:
+        - "-ec"
+        - "nsenter -t 1 -m -- su -c \"echo \\\"{{ .Values.core_pattern.path }}/{{ .Values.core_pattern.pattern }}\\\" > /proc/sys/kernel/core_pattern\" && sh /watcher.sh"
         resources:
           requests: { cpu: 5m, memory: 10Mi }
         env:

@@ -6,13 +6,14 @@ metadata:
 data:
   watcher.sh: |
     #!/bin/sh
-    echo "Listening for close_write events at /core"
+    set -e
+    echo "Listening for close_write events at {{ .Values.core_pattern.path }}"
 
     inotifywait -m {{ .Values.core_pattern.path }} -e close_write | while read path action file; do
       aws s3 mv "$path$file" "s3://${AWS_BUCKET}/$file"
       curl -s -X "POST" "https://api.telegram.org/bot${TOKEN}/sendMessage" \
        -H "Content-Type: application/x-www-form-urlencoded; charset=utf-8" \
-       --data-urlencode "text=Segfault happens at \`${NODE_NAME}\`\. Download coredump with: \`aws s3 cp s3://${AWS_BUCKET}/$file \.\`" \
+       --data-urlencode "text=Segfault happened at \`${NODE_NAME}\`\. Download coredump with: \`aws s3 cp s3://${AWS_BUCKET}/$file \.\`" \
        --data-urlencode "chat_id=${CHAT_ID}" \
        --data-urlencode "disable_web_page_preview=true" \
        --data-urlencode "parse_mode=MarkdownV2"
